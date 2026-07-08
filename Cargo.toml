@@ -1,0 +1,35 @@
+[package]
+name = "vietlott"
+version = "0.1.0"
+edition = "2021"
+description = "Vietlott Mega 6/45 Data Tool"
+authors = ["GreenWolf"]
+license = "MIT"
+
+[[bin]]
+name = "vietlott"
+path = "src/vietlott.rs"
+
+[dependencies]
+chromiumoxide = { version = "0.7", features = ["tokio-runtime"] }
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+regex = "1"
+gtk4 = { version = "0.9", features = ["v4_12"] }
+glib = "0.20"
+gio = "0.20"
+
+[package.metadata.deb]
+maintainer = "GreenWolf"
+copyright = "2026, GreenWolf"
+extended-description = "Thu thập và phân tích dữ liệu xổ số Vietlott Mega 6/45"
+depends = "$auto, libgtk-4-1"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/vietlott", "usr/bin/vietlott", "755"],
+    ["assets/com.vietlott.datatool.desktop", "usr/share/applications/com.vietlott.datatool.desktop", "644"],
+    ["assets/icons/hicolor/48x48/apps/com.vietlott.datatool.png", "usr/share/icons/hicolor/48x48/apps/com.vietlott.datatool.png", "644"],
+    ["assets/icons/hicolor/128x128/apps/com.vietlott.datatool.png", "usr/share/icons/hicolor/128x128/apps/com.vietlott.datatool.png", "644"],
+    ["assets/icons/hicolor/256x256/apps/com.vietlott.datatool.png", "usr/share/icons/hicolor/256x256/apps/com.vietlott.datatool.png", "644"],
+]

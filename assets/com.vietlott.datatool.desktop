@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Vietlott Mega 6/45 Data Tool
+Comment=Thu thập và phân tích dữ liệu xổ số Vietlott Mega 6/45
+Exec=vietlott
+Icon=com.vietlott.datatool
+Terminal=false
+Categories=Utility;
+StartupWMClass=com.vietlott.datatool
