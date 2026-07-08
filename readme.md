@@ -16,5 +16,5 @@ cargo run --bin vietlott
 
 cargo deb
 
-chú ý: thiếu thư viện gì thì lên gemini search rồi cài vô máy, ngoài ra nếu bạn dùng vpn hoặc ip ko thuộc việt nam thì web vietlott sẽ hiện captcha vào app hoàn toàn vô dụng...
+chú ý: thiếu thư viện gì thì lên gemini search rồi cài vô máy, ngoài ra nếu bạn dùng vpn hoặc ip ko thuộc việt nam thì web vietlott sẽ hiện captcha và app hoàn toàn vô dụng...
 
