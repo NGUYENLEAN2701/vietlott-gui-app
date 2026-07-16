@@ -1,6 +1,6 @@
 //! Vietlott 6/45 - All-in-one GTK4 App
 //! cargo run --bin vietlott
-//!Nguyễn Lê An
+//!Nguyễn Lê An 0123456789
 use gtk4::prelude::*;
 use gtk4::{
     Align, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FileDialog, Frame,
