@@ -3,14 +3,28 @@
 //!Nguyễn Lê An 0123456789
 use gtk4::prelude::*;
 use gtk4::{
-    Align, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FileDialog, Frame,
-    IconTheme, Label, Orientation, PolicyType, ScrolledWindow, Separator, TextView, Window,
+    Align,
+    Application,
+    ApplicationWindow,
+    Box as GtkBox,
+    Button,
+    Entry,
+    FileDialog,
+    Frame,
+    IconTheme,
+    Label,
+    Orientation,
+    PolicyType,
+    ScrolledWindow,
+    Separator,
+    TextView,
+    Window,
 };
 use glib::clone;
 use std::fmt::Display;
-use std::path::{Path, PathBuf};
+use std::path::{ Path, PathBuf };
 use std::sync::mpsc;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{ Arc, Mutex, OnceLock };
 use std::time::Duration;
 
 // ─── CẤU HÌNH ────────────────────────────────────────────────────────────────
@@ -156,10 +170,7 @@ fn bundled_icon_theme_dir() -> Option<PathBuf> {
 
     if let Ok(exe) = std::env::current_exe() {
         if let Some(parent) = exe.parent() {
-            for candidate in [
-                parent.join("assets/icons"),
-                parent.join("../share/icons"),
-            ] {
+            for candidate in [parent.join("assets/icons"), parent.join("../share/icons")] {
                 if candidate.join("hicolor").is_dir() {
                     return candidate.canonicalize().ok();
                 }
@@ -189,7 +200,13 @@ fn append_log(text_view: &TextView, msg: &str) {
     let buffer = text_view.buffer();
     let mut end = buffer.end_iter();
     buffer.insert(&mut end, &format!("{msg}\n"));
-    text_view.scroll_to_mark(&buffer.create_mark(None, &buffer.end_iter(), true), 0.0, false, 0.0, 0.0);
+    text_view.scroll_to_mark(
+        &buffer.create_mark(None, &buffer.end_iter(), true),
+        0.0,
+        false,
+        0.0,
+        0.0
+    );
 }
 
 fn set_buttons_enabled(buttons: &[Button], enabled: bool) {
@@ -203,10 +220,7 @@ fn begin_task(buttons: &[Button], label: &str) {
     app_log(format!("═══ Bắt đầu: {label} ═══"));
 }
 
-fn run_in_background<F>(task: F, done_tx: mpsc::Sender<()>)
-where
-    F: FnOnce() + Send + 'static,
-{
+fn run_in_background<F>(task: F, done_tx: mpsc::Sender<()>) where F: FnOnce() + Send + 'static {
     std::thread::spawn(move || {
         task();
         let _ = done_tx.send(());
@@ -359,25 +373,19 @@ fn build_ui(app: &Application) {
     });
 
     // ── Browse folder ──
-    btn_browse.connect_clicked(clone!(#[strong] window, #[strong] entry_dir, move |_| {
-        let dialog = {
-            let builder = FileDialog::builder()
-                .title("Chọn thư mục lưu dữ liệu")
-                .modal(true);
-            if let Ok(current) = std::fs::canonicalize(app_dir()) {
-                builder
-                    .initial_folder(&gio::File::for_path(current))
-                    .build()
-            } else {
-                builder.build()
-            }
-        };
+    btn_browse.connect_clicked(
+        clone!((#[strong] window), (#[strong] entry_dir), move |_| {
+            let dialog = {
+                let builder = FileDialog::builder().title("Chọn thư mục lưu dữ liệu").modal(true);
+                if let Ok(current) = std::fs::canonicalize(app_dir()) {
+                    builder.initial_folder(&gio::File::for_path(current)).build()
+                } else {
+                    builder.build()
+                }
+            };
 
-        let entry_dir = entry_dir.clone();
-        dialog.select_folder(
-            Some(&window),
-            None::<&gio::Cancellable>,
-            move |result| {
+            let entry_dir = entry_dir.clone();
+            dialog.select_folder(Some(&window), None::<&gio::Cancellable>, move |result| {
                 match result {
                     Ok(file) => {
                         if let Some(path) = file.path() {
@@ -393,42 +401,48 @@ fn build_ui(app: &Application) {
                         }
                     }
                 }
-            },
-        );
-    }));
+            });
+        })
+    );
 
     // ── Connect buttons ──
     {
         let btns = Arc::clone(&all_buttons);
         let tx = done_tx.clone();
-        btn_scraper.connect_clicked(clone!(#[weak] entry_start, #[weak] entry_end, move |_| {
-            let s = entry_start.text().to_string().parse().unwrap_or(DEFAULT_START);
-            let e = entry_end.text().to_string().parse().unwrap_or(DEFAULT_END);
-            begin_task(btns.as_ref(), "Scraper");
-            run_in_background(move || run_scraper_cli(s, e, false), tx.clone());
-        }));
+        btn_scraper.connect_clicked(
+            clone!((#[weak] entry_start), (#[weak] entry_end), move |_| {
+                let s = entry_start.text().to_string().parse().unwrap_or(DEFAULT_START);
+                let e = entry_end.text().to_string().parse().unwrap_or(DEFAULT_END);
+                begin_task(btns.as_ref(), "Scraper");
+                run_in_background(move || run_scraper_cli(s, e, false), tx.clone());
+            })
+        );
     }
 
     {
         let btns = Arc::clone(&all_buttons);
         let tx = done_tx.clone();
-        btn_missing.connect_clicked(clone!(#[weak] entry_start, #[weak] entry_end, move |_| {
-            let s = entry_start.text().to_string().parse().unwrap_or(DEFAULT_START);
-            let e = entry_end.text().to_string().parse().unwrap_or(DEFAULT_END);
-            begin_task(btns.as_ref(), "Scraper (missing)");
-            run_in_background(move || run_scraper_cli(s, e, true), tx.clone());
-        }));
+        btn_missing.connect_clicked(
+            clone!((#[weak] entry_start), (#[weak] entry_end), move |_| {
+                let s = entry_start.text().to_string().parse().unwrap_or(DEFAULT_START);
+                let e = entry_end.text().to_string().parse().unwrap_or(DEFAULT_END);
+                begin_task(btns.as_ref(), "Scraper (missing)");
+                run_in_background(move || run_scraper_cli(s, e, true), tx.clone());
+            })
+        );
     }
 
     {
         let btns = Arc::clone(&all_buttons);
         let tx = done_tx.clone();
-        btn_checker.connect_clicked(clone!(#[weak] entry_start, #[weak] entry_end, move |_| {
-            let s = entry_start.text().to_string().parse().unwrap_or(DEFAULT_START);
-            let e = entry_end.text().to_string().parse().unwrap_or(DEFAULT_END);
-            begin_task(btns.as_ref(), "Checker");
-            run_in_background(move || run_checker_cli(s, e), tx.clone());
-        }));
+        btn_checker.connect_clicked(
+            clone!((#[weak] entry_start), (#[weak] entry_end), move |_| {
+                let s = entry_start.text().to_string().parse().unwrap_or(DEFAULT_START);
+                let e = entry_end.text().to_string().parse().unwrap_or(DEFAULT_END);
+                begin_task(btns.as_ref(), "Checker");
+                run_in_background(move || run_checker_cli(s, e), tx.clone());
+            })
+        );
     }
 
     {
@@ -449,246 +463,265 @@ fn build_ui(app: &Application) {
 // ─── SCRAPER CLI ─────────────────────────────────────────────────────────────
 
 fn run_scraper_cli(start: u32, end: u32, use_missing: bool) {
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        use chromiumoxide::browser::{Browser, BrowserConfig};
-        use futures::StreamExt;
-        use std::sync::Arc;
-        use tokio::sync::Mutex;
+    tokio::runtime::Runtime
+        ::new()
+        .unwrap()
+        .block_on(async {
+            use chromiumoxide::browser::{ Browser, BrowserConfig };
+            use futures::StreamExt;
+            use std::sync::Arc;
+            use tokio::sync::Mutex;
 
-        app_log(format!("📁 Data dir: {}", app_dir().display()));
+            app_log(format!("📁 Data dir: {}", app_dir().display()));
 
-        let mut ids: Vec<String> = if use_missing && missing_file().exists() {
-            let content = tokio::fs::read_to_string(missing_file()).await.unwrap_or_default();
-            let re = regex::Regex::new(r"^\d+").unwrap();
-            content
-                .lines()
-                .filter(|l| !l.trim().is_empty())
-                .filter_map(|l| re.find(l.trim()))
-                .map(|m| format!("{:0>5}", m.as_str()))
-                .collect()
-        } else {
-            (start..=end).map(|i| format!("{:0>5}", i)).collect()
-        };
+            let mut ids: Vec<String> = if use_missing && missing_file().exists() {
+                let content = tokio::fs::read_to_string(missing_file()).await.unwrap_or_default();
+                let re = regex::Regex::new(r"^\d+").unwrap();
+                content
+                    .lines()
+                    .filter(|l| !l.trim().is_empty())
+                    .filter_map(|l| re.find(l.trim()))
+                    .map(|m| format!("{:0>5}", m.as_str()))
+                    .collect()
+            } else {
+                (start..=end).map(|i| format!("{:0>5}", i)).collect()
+            };
 
-        let before = ids.len();
-        ids.retain(|id| !raw_path(id).exists());
-        let skipped = before - ids.len();
-        if skipped > 0 {
-            app_log(format!("⏭️  Bỏ qua {skipped} file đã có."));
-        }
+            let before = ids.len();
+            ids.retain(|id| !raw_path(id).exists());
+            let skipped = before - ids.len();
+            if skipped > 0 {
+                app_log(format!("⏭️  Bỏ qua {skipped} file đã có."));
+            }
 
-        if ids.is_empty() {
-            app_log("✅ Tất cả đã có, không cần cào thêm.");
-            return;
-        }
-
-        let total = ids.len();
-        app_log(format!("📡 Khởi chạy browser ({MAX_WORKERS} workers) ..."));
-
-        let (browser, mut handler) = match Browser::launch(BrowserConfig::builder().build().unwrap()).await
-        {
-            Ok(b) => b,
-            Err(e) => {
-                app_log_err(format!("❌ Không khởi động được browser: {e}"));
+            if ids.is_empty() {
+                app_log("✅ Tất cả đã có, không cần cào thêm.");
                 return;
             }
-        };
 
-        let handler_task = tokio::spawn(async move {
-            while handler.next().await.is_some() {}
-        });
+            let total = ids.len();
+            app_log(format!("📡 Khởi chạy browser ({MAX_WORKERS} workers) ..."));
 
-        let browser = Arc::new(browser);
-        let queue = Arc::new(Mutex::new(ids));
-        let counter = Arc::new(Mutex::new(0usize));
-        let mut tasks = vec![];
+            let (browser, mut handler) = match
+                Browser::launch(BrowserConfig::builder().build().unwrap()).await
+            {
+                Ok(b) => b,
+                Err(e) => {
+                    app_log_err(format!("❌ Không khởi động được browser: {e}"));
+                    return;
+                }
+            };
 
-        for i in 1..=MAX_WORKERS {
-            let q = Arc::clone(&queue);
-            let b = Arc::clone(&browser);
-            let c = Arc::clone(&counter);
+            let handler_task = tokio::spawn(async move {
+                while handler.next().await.is_some() {}
+            });
 
-            tasks.push(tokio::spawn(async move {
-                app_log(format!("👷 [Worker {i}] Sẵn sàng."));
-                loop {
-                    let id_str = {
-                        let mut q = q.lock().await;
-                        if q.is_empty() {
-                            break;
-                        }
-                        q.remove(0)
-                    };
-                    let progress = {
-                        let mut c = c.lock().await;
-                        *c += 1;
-                        *c
-                    };
-                    let url = format!("{BASE_URL}?id={id_str}&nocatche=1");
-                    app_log(format!("🚀 [Worker {i}] [{progress}/{total}] #{id_str}"));
+            let browser = Arc::new(browser);
+            let queue = Arc::new(Mutex::new(ids));
+            let counter = Arc::new(Mutex::new(0usize));
+            let mut tasks = vec![];
 
-                    let mut page_opt = None;
-                    match b.new_page(&url).await {
-                        Ok(page) => {
-                            let _ = page.wait_for_navigation().await;
-                            if let Ok(val) = page
-                                .evaluate(
-                                    r#"() => {
+            for i in 1..=MAX_WORKERS {
+                let q = Arc::clone(&queue);
+                let b = Arc::clone(&browser);
+                let c = Arc::clone(&counter);
+
+                tasks.push(
+                    tokio::spawn(async move {
+                        app_log(format!("👷 [Worker {i}] Sẵn sàng."));
+                        loop {
+                            let id_str = {
+                                let mut q = q.lock().await;
+                                if q.is_empty() {
+                                    break;
+                                }
+                                q.remove(0)
+                            };
+                            let progress = {
+                                let mut c = c.lock().await;
+                                *c += 1;
+                                *c
+                            };
+                            let url = format!("{BASE_URL}?id={id_str}&nocatche=1");
+                            app_log(format!("🚀 [Worker {i}] [{progress}/{total}] #{id_str}"));
+
+                            let mut page_opt = None;
+                            match b.new_page(&url).await {
+                                Ok(page) => {
+                                    let _ = page.wait_for_navigation().await;
+                                    if
+                                        let Ok(val) = page.evaluate(
+                                            r#"() => {
                                 ['script','style','noscript','iframe','nav','header','footer','.footer']
                                     .forEach(sel => document.querySelectorAll(sel).forEach(el => el.remove()));
                                 return (document.body.innerText||'')
                                     .split('\n').map(l=>l.trim()).filter(l=>l.length>0).join('\n');
-                            }"#,
-                                )
-                                .await
-                            {
-                                if let Ok(text) = val.into_value::<String>() {
-                                    let fpath = raw_path(&id_str);
-                                    match tokio::fs::write(&fpath, &text).await {
-                                        Ok(_) => app_log(format!("✅ [Worker {i}] {id_str}.txt")),
-                                        Err(e) => app_log_err(format!("❌ Lỗi ghi {id_str}: {e}")),
+                            }"#
+                                        ).await
+                                    {
+                                        if let Ok(text) = val.into_value::<String>() {
+                                            let fpath = raw_path(&id_str);
+                                            match tokio::fs::write(&fpath, &text).await {
+                                                Ok(_) =>
+                                                    app_log(
+                                                        format!("✅ [Worker {i}] {id_str}.txt")
+                                                    ),
+                                                Err(e) =>
+                                                    app_log_err(
+                                                        format!("❌ Lỗi ghi {id_str}: {e}")
+                                                    ),
+                                            }
+                                        }
                                     }
+                                    page_opt = Some(page);
                                 }
+                                Err(e) => app_log_err(format!("❌ [Worker {i}] {id_str}: {e}")),
                             }
-                            page_opt = Some(page);
+                            if let Some(p) = page_opt {
+                                let _ = p.close().await;
+                            }
+                            tokio::time::sleep(
+                                tokio::time::Duration::from_millis(WORKER_DELAY)
+                            ).await;
                         }
-                        Err(e) => app_log_err(format!("❌ [Worker {i}] {id_str}: {e}")),
-                    }
-                    if let Some(p) = page_opt {
-                        let _ = p.close().await;
-                    }
-                    tokio::time::sleep(tokio::time::Duration::from_millis(WORKER_DELAY)).await;
-                }
-                app_log(format!("🏁 [Worker {i}] Xin nghỉ!"));
-            }));
-        }
+                        app_log(format!("🏁 [Worker {i}] Xin nghỉ!"));
+                    })
+                );
+            }
 
-        for t in tasks {
-            let _ = t.await;
-        }
-        handler_task.abort();
-        let done = *counter.lock().await;
-        app_log(format!("\n🎉 HOÀN TẤT! {done}/{total} ID."));
-    });
+            for t in tasks {
+                let _ = t.await;
+            }
+            handler_task.abort();
+            let done = *counter.lock().await;
+            app_log(format!("\n🎉 HOÀN TẤT! {done}/{total} ID."));
+        });
 }
 
 // ─── CHECKER CLI ─────────────────────────────────────────────────────────────
 
 fn run_checker_cli(start: u32, end: u32) {
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        app_log(format!("📁 Data dir: {}", app_dir().display()));
-        app_log(format!("📂 Raw dir : {}", raw_dir().display()));
-        app_log(format!("🔍 Kiểm tra {:0>5} → {:0>5} ...", start, end));
+    tokio::runtime::Runtime
+        ::new()
+        .unwrap()
+        .block_on(async {
+            app_log(format!("📁 Data dir: {}", app_dir().display()));
+            app_log(format!("📂 Raw dir : {}", raw_dir().display()));
+            app_log(format!("🔍 Kiểm tra {:0>5} → {:0>5} ...", start, end));
 
-        let mut missing: Vec<String> = vec![];
+            let mut missing: Vec<String> = vec![];
 
-        for i in start..=end {
-            let id_str = format!("{:0>5}", i);
-            let fpath = raw_path(&id_str);
-            if !fpath.exists() {
-                missing.push(id_str);
-            } else {
-                match tokio::fs::read_to_string(&fpath).await {
-                    Ok(content) if content.trim().is_empty() => {
-                        app_log(format!("⚠️  File trống: {id_str}.txt"));
-                        let _ = tokio::fs::remove_file(&fpath).await;
-                        missing.push(id_str);
+            for i in start..=end {
+                let id_str = format!("{:0>5}", i);
+                let fpath = raw_path(&id_str);
+                if !fpath.exists() {
+                    missing.push(id_str);
+                } else {
+                    match tokio::fs::read_to_string(&fpath).await {
+                        Ok(content) if content.trim().is_empty() => {
+                            app_log(format!("⚠️  File trống: {id_str}.txt"));
+                            let _ = tokio::fs::remove_file(&fpath).await;
+                            missing.push(id_str);
+                        }
+                        Ok(content) if
+                            content.contains("bad gateway") ||
+                            content.contains("Cloudflare") ||
+                            content.contains("Host Error") ||
+                            !content.contains("Kỳ quay thưởng")
+                        => {
+                            app_log(format!("⚠️  File lỗi nội dung: {id_str}.txt → xóa"));
+                            let _ = tokio::fs::remove_file(&fpath).await;
+                            missing.push(id_str);
+                        }
+                        _ => {}
                     }
-                    Ok(content)
-                        if content.contains("bad gateway")
-                            || content.contains("Cloudflare")
-                            || content.contains("Host Error")
-                            || !content.contains("Kỳ quay thưởng") =>
-                    {
-                        app_log(format!("⚠️  File lỗi nội dung: {id_str}.txt → xóa"));
-                        let _ = tokio::fs::remove_file(&fpath).await;
-                        missing.push(id_str);
-                    }
-                    _ => {}
                 }
             }
-        }
 
-        if !missing.is_empty() {
-            app_log(format!("❌ Thiếu {} file!", missing.len()));
-            tokio::fs::write(missing_file(), missing.join("\n") + "\n")
-                .await
-                .unwrap();
-            app_log(format!("📝 Đã ghi → {}", missing_file().display()));
-            for id in &missing {
-                app_log(format!("   #{id}"));
+            if !missing.is_empty() {
+                app_log(format!("❌ Thiếu {} file!", missing.len()));
+                tokio::fs::write(missing_file(), missing.join("\n") + "\n").await.unwrap();
+                app_log(format!("📝 Đã ghi → {}", missing_file().display()));
+                for id in &missing {
+                    app_log(format!("   #{id}"));
+                }
+            } else {
+                app_log("✅ Đầy đủ! Không thiếu file nào.");
+                if missing_file().exists() {
+                    let _ = tokio::fs::remove_file(missing_file()).await;
+                    app_log("🗑️  Đã xóa missing.txt cũ.");
+                }
             }
-        } else {
-            app_log("✅ Đầy đủ! Không thiếu file nào.");
-            if missing_file().exists() {
-                let _ = tokio::fs::remove_file(missing_file()).await;
-                app_log("🗑️  Đã xóa missing.txt cũ.");
-            }
-        }
-    });
+        });
 }
 
 // ─── PARSER CLI ──────────────────────────────────────────────────────────────
 
 fn run_parser_cli() {
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        app_log(format!("📁 Data dir: {}", app_dir().display()));
-        app_log(format!("📂 Đang parse {} ...", raw_dir().display()));
+    tokio::runtime::Runtime
+        ::new()
+        .unwrap()
+        .block_on(async {
+            app_log(format!("📁 Data dir: {}", app_dir().display()));
+            app_log(format!("📂 Đang parse {} ...", raw_dir().display()));
 
-        let mut entries: Vec<String> = vec![];
-        match tokio::fs::read_dir(raw_dir()).await {
-            Ok(mut dir) => {
-                while let Some(e) = dir.next_entry().await.unwrap() {
-                    let name = e.file_name().to_string_lossy().to_string();
-                    if name.ends_with(".txt") {
-                        entries.push(name);
+            let mut entries: Vec<String> = vec![];
+            match tokio::fs::read_dir(raw_dir()).await {
+                Ok(mut dir) => {
+                    while let Some(e) = dir.next_entry().await.unwrap() {
+                        let name = e.file_name().to_string_lossy().to_string();
+                        if name.ends_with(".txt") {
+                            entries.push(name);
+                        }
+                    }
+                }
+                Err(e) => {
+                    app_log_err(format!("❌ {e}"));
+                    return;
+                }
+            }
+            entries.sort();
+
+            let mut results: Vec<String> = vec![];
+            let mut failed: Vec<String> = vec![];
+
+            for name in &entries {
+                let fpath = raw_dir().join(name);
+                match tokio::fs::read_to_string(&fpath).await {
+                    Ok(content) =>
+                        match parse_content(&content) {
+                            Some(line) => results.push(line),
+                            None => failed.push(name.clone()),
+                        }
+                    Err(e) => {
+                        app_log_err(format!("❌ {name}: {e}"));
+                        failed.push(name.clone());
                     }
                 }
             }
-            Err(e) => {
-                app_log_err(format!("❌ {e}"));
-                return;
+
+            results.sort();
+            tokio::fs::write(output_file(), results.join("\n") + "\n").await.unwrap();
+            app_log(
+                format!("\n🎉 HOÀN TẤT! {} dòng → '{}'", results.len(), output_file().display())
+            );
+            if !failed.is_empty() {
+                app_log(
+                    format!(
+                        "⚠️  Thất bại ({}): {}",
+                        failed.len(),
+                        failed[..(5).min(failed.len())].join(", ")
+                    )
+                );
             }
-        }
-        entries.sort();
-
-        let mut results: Vec<String> = vec![];
-        let mut failed: Vec<String> = vec![];
-
-        for name in &entries {
-            let fpath = raw_dir().join(name);
-            match tokio::fs::read_to_string(&fpath).await {
-                Ok(content) => match parse_content(&content) {
-                    Some(line) => results.push(line),
-                    None => failed.push(name.clone()),
-                },
-                Err(e) => {
-                    app_log_err(format!("❌ {name}: {e}"));
-                    failed.push(name.clone());
-                }
-            }
-        }
-
-        results.sort();
-        tokio::fs::write(output_file(), results.join("\n") + "\n")
-            .await
-            .unwrap();
-        app_log(format!(
-            "\n🎉 HOÀN TẤT! {} dòng → '{}'",
-            results.len(),
-            output_file().display()
-        ));
-        if !failed.is_empty() {
-            app_log(format!(
-                "⚠️  Thất bại ({}): {}",
-                failed.len(),
-                failed[..5.min(failed.len())].join(", ")
-            ));
-        }
-    });
+        });
 }
 
 fn parse_content(content: &str) -> Option<String> {
-    let lines: Vec<&str> = content.lines().map(|l| l.trim()).collect();
+    let lines: Vec<&str> = content
+        .lines()
+        .map(|l| l.trim())
+        .collect();
     let re_h = regex::Regex::new(r"#(\d+)\s+ngày\s+(\d{2}/\d{2}/\d{4})").unwrap();
     let re_n = regex::Regex::new(r"^\d{12}$").unwrap();
 
@@ -727,8 +760,5 @@ fn parse_content(content: &str) -> Option<String> {
     }
 
     let c = |s: &str| s.replace('.', "");
-    Some(format!(
-        "#{}-{}-{}-{}-{}-{}-{}-{}",
-        ky, ng, so, gt, c(&j), c(&g1), c(&g2), c(&g3)
-    ))
+    Some(format!("#{}-{}-{}-{}-{}-{}-{}-{}", ky, ng, so, gt, c(&j), c(&g1), c(&g2), c(&g3)))
 }
